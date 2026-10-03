@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEART-CHECK - Dashboard CIS Perawat (Planned Visits CCM)</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#E53E3E',
+                            darkRed: '#9B2C2C',
+                            lightRed: '#FFF5F5',
+                            green: '#38A169',
+                            yellow: '#D69E2E',
+                            blue: '#3182CE',
+                            slateBg: '#0F172A',
+                            cardDark: '#1E293B',
+                            cardBorderDark: '#334155'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons & Chart.js -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Focus state accessibility ring */
+        button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+            outline: 2px solid #E53E3E !important;
+            outline-offset: 2px;
+        }
+
+        /* Accessibility text scaling */
+        .text-scale-sm { font-size: 0.875rem; }
+        .text-scale-md { font-size: 1rem; }
+        .text-scale-lg { font-size: 1.125rem; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #E53E3E;
+            border-radius: 3px;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(8px);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- TOP CLINICAL HEADER -->
+    <header class="sticky top-0 z-40 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+            
+            <!-- Brand & CIS System Identity -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('dashboard')">
+                <div class="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-red-600/30">
+                    <i class="fa-solid fa-heart-pulse animate-pulse"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-extrabold text-xl tracking-tight text-red-600 dark:text-red-500 leading-none">
+                            HEART-CHECK <span class="text-xs font-semibold px-2 py-0.5 rounded bg-red-100 dark:bg-red-950/80 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-800">CIS PERAWAT</span>
+                        </h1>
+                    </div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Clinical Information System — Planned Visits CCM</p>
+                </div>
+            </div>
+
+            <!-- Global Patient Quick Search -->
+            <div class="hidden md:flex items-center flex-1 max-w-md mx-8">
+                <div class="relative w-full">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="global-patient-search" onkeyup="handleGlobalSearch(event)" placeholder="Cari Pasien (Nama / No. RM)... [Tekan Enter]" 
+                           class="w-full pl-10 pr-4 py-2 rounded-xl text-sm bg-slate-100 dark:bg-slate-800/80 border border-slate-300 dark:border-slate-700 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white transition">
+                </div>
+            </div>
+
+            <!-- Status, Alert Bell, Accessibility & Nurse Profile -->
+            <div class="flex items-center gap-3">
+                <!-- Sync Status Indicator -->
+                <div class="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>Server Faskes Terhubung</span>
+                </div>
+
+                <!-- Alert Bell Center -->
+                <button onclick="toggleAlertDrawer()" class="relative p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition" title="Notifikasi Alert Risiko">
+                    <i class="fa-solid fa-bell text-lg"></i>
+                    <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-600 text-white font-bold text-[10px] rounded-full flex items-center justify-center animate-bounce">2</span>
+                </button>
+
+                <!-- Accessibility Scale -->
+                <div class="hidden sm:flex items-center bg-slate-200 dark:bg-slate-800 rounded-lg p-1 text-xs">
+                    <button onclick="changeFontScale(-1)" class="px-2 py-1 font-bold rounded hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200" title="Kecilkan Teks">A-</button>
+                    <button onclick="changeFontScale(1)" class="px-2 py-1 font-bold rounded hover:bg-white dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200" title="Besarkan Teks">A+</button>
+                </div>
+
+                <!-- Dark Theme Switcher -->
+                <button onclick="toggleTheme()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="Ubah Tema">
+                    <i id="theme-icon" class="fa-solid fa-moon"></i>
+                </button>
+
+                <!-- Perawat Nurse Profile Badge -->
+                <div class="flex items-center gap-2.5 pl-2 border-l border-slate-300 dark:border-slate-800">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-red-600 to-rose-400 text-white font-bold flex items-center justify-center text-sm shadow">
+                        RD
+                    </div>
+                    <div class="hidden xl:block text-left">
+                        <div class="font-bold text-xs text-slate-900 dark:text-slate-100 leading-tight">Ns. Ratna Dewi, S.Kep</div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400">NIP: 198804122012012003</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- SECONDARY NAVIGATION TAB BAR -->
+    <nav class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-[69px] z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex space-x-1 sm:space-x-4 overflow-x-auto py-2 scrollbar-none">
+                <button onclick="switchTab('dashboard')" id="tab-nav-dashboard" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap bg-red-600 text-white">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard Utama</span>
+                </button>
+                <button onclick="switchTab('scheduler')" id="tab-nav-scheduler" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i class="fa-solid fa-calendar-days"></i>
+                    <span>Manajer Kunjungan (Planned Visits)</span>
+                </button>
+                <button onclick="switchTab('execution')" id="tab-nav-execution" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i class="fa-solid fa-stethoscope"></i>
+                    <span>Eksekusi Kunjungan & Pemantauan</span>
+                </button>
+                <button onclick="switchTab('kpi')" id="tab-nav-kpi" class="tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                    <span>Evaluasi & Indikator CCM (KPI)</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 text-scale-md space-y-6" id="app-main-container">
+
+        <!-- ========================================================================= -->
+        <!-- TAB 1: DASHBOARD UTAMA PERAWAT (Executive & Clinical Overview)            -->
+        <!-- ========================================================================= -->
+        <section id="view-dashboard" class="tab-content space-y-6">
+            
+            <!-- Welcome Banner & Shift Summary -->
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-red-950 rounded-2xl p-6 text-white border border-slate-700 shadow-xl relative overflow-hidden">
+                <div class="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none flex items-center justify-end pr-8">
+                    <i class="fa-solid fa-heart-circle-bolt text-[180px] text-red-500"></i>
+                </div>
+                <div class="relative z-10 max-w-3xl space-y-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/20 text-red-300 text-xs font-semibold border border-red-500/30">
+                        <i class="fa-solid fa-clock"></i> Sesi Dinas Pagi — Poli Jantung
+                    </div>
+                    <h2 class="text-2xl sm:text-3xl font-black tracking-tight">
+                        Selamat Datang, Ns. Ratna Dewi, S.Kep!
+                    </h2>
+                    <p class="text-slate-300 text-xs sm:text-sm leading-relaxed">
+                        Fokus Operasional Hari Ini: <strong class="text-white">Kunjungan Terencana (Planned Visits) Pasien Kardiovaskular Kronis</strong> berbasis kerangka kerja Chronic Care Model (CCM). Identifikasi perburukan dini sebelum terjadi krisis akut.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Planned Visits Summary Metrics Widgets -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Metric 1: Total Planned Today -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Total Kunjungan Hari Ini</span>
+                        <div class="text-3xl font-black text-slate-900 dark:text-white mt-1" id="stat-total-today">18</div>
+                        <span class="text-[11px] font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1 mt-1">
+                            <i class="fa-solid fa-calendar"></i> 100% Slot Terisi
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl font-bold shrink-0">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+
+                <!-- Metric 2: Completed Execution -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Selesai Dieksekusi</span>
+                        <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="stat-completed-today">11</div>
+                        <span class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1">
+                            <i class="fa-solid fa-check-double"></i> 61% Terlaksana
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-xl font-bold shrink-0">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                </div>
+
+                <!-- Metric 3: Waiting / In Progress -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Dalam Antrean / Proses</span>
+                        <div class="text-3xl font-black text-amber-600 dark:text-amber-400 mt-1" id="stat-waiting-today">5</div>
+                        <span class="text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 mt-1">
+                            <i class="fa-solid fa-hourglass-half"></i> Membutuhkan Respon
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center text-xl font-bold shrink-0">
+                        <i class="fa-solid fa-user-clock"></i>
+                    </div>
+                </div>
+
+                <!-- Metric 4: Overdue / Mangkir -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between">
+                    <div>
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">Mangkir / Overdue</span>
+                        <div class="text-3xl font-black text-red-600 dark:text-red-500 mt-1" id="stat-overdue-today">2</div>
+                        <span class="text-[11px] font-semibold text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
+                            <i class="fa-solid fa-bullhorn"></i> Perlu Outreach
+                        </span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 flex items-center justify-center text-xl font-bold shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Layout: Table & Alert Sidebar -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Table Column (2 Cols) -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                        
+                        <!-- Filter & Header Toolbar -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
+                            <div>
+                                <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                                    <i class="fa-solid fa-list-check text-red-500"></i> Daftar Kunjungan Terencana Hari Ini
+                                </h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Stratifikasi risiko otomatis berdasarkan input self-monitoring & rekam medis</p>
+                            </div>
+                            
+                            <!-- Quick Filter Pills -->
+                            <div class="flex items-center gap-1 overflow-x-auto py-1">
+                                <button onclick="filterTable('ALL')" class="filter-btn text-xs font-semibold px-2.5 py-1 rounded-lg bg-red-600 text-white">Semua</button>
+                                <button onclick="filterTable('RED')" class="filter-btn text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-red-600 dark:text-red-400 hover:bg-red-100">Kritis (2)</button>
+                                <button onclick="filterTable('YELLOW')" class="filter-btn text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-amber-600 dark:text-amber-400 hover:bg-amber-100">Warning (1)</button>
+                                <button onclick="filterTable('GREEN')" class="filter-btn text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100">Stabil (1)</button>
+                            </div>
+                        </div>
+
+                        <!-- Data Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs sm:text-sm">
+                                <thead>
+                                    <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px]">
+                                        <th class="pb-3 pl-2">Jam</th>
+                                        <th class="pb-3">Pasien & No. RM</th>
+                                        <th class="pb-3">Diagnosa / NYHA</th>
+                                        <th class="pb-3">Status Risiko</th>
+                                        <th class="pb-3">Metode</th>
+                                        <th class="pb-3">Status</th>
+                                        <th class="pb-3 text-right pr-2">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="planned-visits-tbody" class="divide-y divide-slate-100 dark:divide-slate-800">
+                                    <!-- Dynamic rows injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: CCM Integration Badges & Real-Time Alert Stream (1 Col) -->
+                <div class="space-y-4">
+                    
+                    <!-- CCM 6 Elements Operational Status Card -->
+                    <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                        <h4 class="font-bold text-slate-900 dark:text-white text-xs uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-cubes text-red-500"></i> Status Enam Elemen CCM
+                        </h4>
+                        <div class="space-y-2 text-xs">
+                            <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">1. Clinical Info System (CIS)</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Aktif Real-Time</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">2. Delivery System Design</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">Nurse-Led Visit</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">3. Decision Support (CDSS)</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Algoritma Triase</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">4. Self-Management Support</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">Action Plan Integrated</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">5. Community Resources</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">PRB & Home Visit</span>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                                <span class="font-semibold text-slate-700 dark:text-slate-300">6. Health Organization</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300">KPI Standardized</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Critical Alert Stream Card -->
+                    <div class="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/60 p-5 rounded-2xl space-y-3">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-extrabold text-red-900 dark:text-red-200 text-xs uppercase tracking-wider flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-red-600 animate-bounce"></i> Alert Perburukan Mandiri
+                            </h4>
+                            <span class="text-[10px] bg-red-600 text-white font-bold px-2 py-0.5 rounded-full">2 Baru</span>
+                        </div>
+                        <div class="space-y-2 text-xs">
+                            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border-l-4 border-red-600 shadow-sm space-y-1">
+                                <div class="flex justify-between font-bold text-slate-900 dark:text-slate-100">
+                                    <span>Bpk. Budi Santoso (RM-88210)</span>
+                                    <span class="text-[10px] text-slate-400">10 mnt lalu</span>
+                                </div>
+                                <p class="text-red-600 dark:text-red-400 font-semibold text-[11px]">Kenaikan BB +2.5 kg / 2 hari & Sesak Istirahat</p>
+                                <button onclick="selectPatientForExecution(88210)" class="text-[11px] text-blue-600 dark:text-blue-400 font-bold underline pt-1 block">
+                                    Eksekusi Kunjungan Proaktif →
+                                </button>
+                            </div>
+                            <div class="bg-white dark:bg-slate-900 p-3 rounded-xl border-l-4 border-red-600 shadow-sm space-y-1">
+                                <div class="flex justify-between font-bold text-slate-900 dark:text-slate-100">
+                                    <span>Bpk. Hendra Wijaya (RM-66129)</span>
+                                    <span class="text-[10px] text-slate-400">25 mnt lalu</span>
+                                </div>
+                                <p class="text-red-600 dark:text-red-400 font-semibold text-[11px]">Tekanan Darah 185/110 mmHg (Krisokardiovaskular)</p>
+                                <button onclick="selectPatientForExecution(66129)" class="text-[11px] text-blue-600 dark:text-blue-400 font-bold underline pt-1 block">
+                                    Eksekusi Kunjungan Proaktif →
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 2: MODUL MANAJEMEN KUNJUNGAN TERENCANA (Planned Visits Manager)        -->
+        <!-- ========================================================================= -->
+        <section id="view-scheduler" class="tab-content hidden space-y-6">
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Modul Manajemen Kunjungan Terencana</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Perencanaan, penjadwalan proaktif, re-scheduling, dan pengangkatan pasien mangkir (Outreach)</p>
+                </div>
+                <button onclick="openProactiveScheduleModal()" class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm shadow-lg transition">
+                    <i class="fa-solid fa-calendar-plus"></i>
+                    <span>+ Jadwalkan Kunjungan Proaktif Baru</span>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Left 2 Cols: Interactive Calendar / Slot Schedule Grid -->
+                <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center gap-3">
+                            <h3 class="font-bold text-slate-900 dark:text-white text-base">Jadwal Kalender Terencana</h3>
+                            <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">Oktober 2026</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <button class="px-3 py-1 rounded-lg bg-red-600 text-white font-bold text-xs">Harian</button>
+                            <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-200">Mingguan</button>
+                            <button class="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-xs hover:bg-slate-200">Bulanan</button>
+                        </div>
+                    </div>
+
+                    <!-- Daily Capacity & Slot Load Grid -->
+                    <div class="space-y-3">
+                        <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 flex justify-between items-center text-xs">
+                            <span class="font-bold text-slate-700 dark:text-slate-300"><i class="fa-solid fa-clock text-blue-500"></i> Kapasitas Slot Hari Ini (30 September 2026):</span>
+                            <span class="font-black text-red-600 dark:text-red-400">18 dari 20 Slot Terisi (90% Beban Kerja)</span>
+                        </div>
+
+                        <!-- Time Slots Visualization -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="calendar-slots-grid">
+                            <!-- Injected dynamically by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right 1 Col: Loss to Follow-Up / Overdue Outreach Management -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                    <div>
+                        <h3 class="font-bold text-slate-900 dark:text-white text-base flex items-center gap-2">
+                            <i class="fa-solid fa-user-slash text-red-500"></i> Pasien Mangkir (Overdue)
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Pelacakan pasien tidak hadir tanpa konfirmasi untuk pencegahan drop-out</p>
+                    </div>
+
+                    <div class="space-y-3" id="overdue-list-container">
+                        <!-- Dynamic overdue patients injected here -->
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 3: REKAM PEMANTAUAN PASIEN & EKSEKUSI KUNJUNGAN (Clinical Execution)  -->
+        <!-- ========================================================================= -->
+        <section id="view-execution" class="tab-content hidden space-y-6">
+            
+            <!-- Patient Selector Header Toolbar -->
+            <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-2">
+                    <label class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Pilih Pasien Eksekusi:</label>
+                    <select id="execution-patient-select" onchange="loadSelectedPatientData(this.value)" class="p-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white">
+                        <option value="88210">Bpk. Budi Santoso (RM-88210) — [MERAH / KRITIS]</option>
+                        <option value="99482">Ibu Siti (RM-99482) — [HIJAU / STABIL]</option>
+                        <option value="77312">Ibu Ahmad (RM-77312) — [KUNING / WARNING]</option>
+                        <option value="66129">Bpk. Hendra Wijaya (RM-66129) — [MERAH / KRITIS]</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="printClinicalSummary()" class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 text-slate-800 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-print"></i> Cetak Ringkasan
+                    </button>
+                    <button onclick="referToSpecialistModal()" class="px-3 py-2 rounded-xl bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-300 dark:border-red-800 font-bold text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-user-doctor"></i> Rujuk Dokter Spesialis
+                    </button>
+                </div>
+            </div>
+
+            <!-- Patient Profile & Medical Diagnosis Summary Banner -->
+            <div id="patient-banner" class="bg-slate-900 text-white rounded-2xl p-6 shadow-xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+                <div class="flex items-start sm:items-center gap-4">
+                    <div id="patient-avatar" class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-red-600 to-amber-500 text-white font-black text-2xl flex items-center justify-center shrink-0 shadow-lg">
+                        BS
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-xl sm:text-2xl font-black" id="patient-name">Bpk. Budi Santoso</h2>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full font-bold bg-slate-800 border border-slate-700" id="patient-rm">RM-88210</span>
+                            <span id="patient-risk-badge" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-red-600 text-white">MERAH - Critical Alert</span>
+                        </div>
+                        <p class="text-xs text-slate-300" id="patient-bio">
+                            Usia: 58 Tahun | Laki-laki | Kontak Darurat: 0812-9988-7766 (Istri)
+                        </p>
+                        <div class="flex flex-wrap gap-1.5 pt-1" id="patient-diagnoses">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950 text-red-300 border border-red-800">Gagal Jantung Kronis (NYHA Class III)</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-blue-950 text-blue-300 border border-blue-800">Hipertensi Stage II</span>
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-950 text-purple-300 border border-purple-800">Post-PJK Stenting (2024)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Vitals Snapshot -->
+                <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shrink-0 grid grid-cols-3 gap-4 text-center">
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block">BB Terakhir</span>
+                        <span class="text-lg font-black text-red-400" id="snap-weight">68.5 kg</span>
+                        <span class="text-[10px] font-bold text-red-400 block">+2.5 kg / 2 hr</span>
+                    </div>
+                    <div class="border-x border-slate-700/80 px-3">
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Tekanan Darah</span>
+                        <span class="text-lg font-black text-amber-400" id="snap-bp">145/92</span>
+                        <span class="text-[10px] text-slate-400 block">mmHg</span>
+                    </div>
+                    <div>
+                        <span class="text-[10px] uppercase font-bold text-slate-400 block">Nadi / HR</span>
+                        <span class="text-lg font-black text-emerald-400" id="snap-hr">88</span>
+                        <span class="text-[10px] text-slate-400 block">bpm</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Longitudinal Monitoring Charts (Weight & Blood Pressure Trends) -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Weight Trend Chart -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-red-500"></i> Tren Berat Badan 30 Hari (kg)
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Peringatan otomatis aktif jika terjadi kenaikan >2 kg dalam 2 hari</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-red-100 dark:bg-red-950 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-800">
+                            Deteksi Fluid Retention
+                        </span>
+                    </div>
+                    <div class="relative h-56 w-full">
+                        <canvas id="patientWeightChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Blood Pressure & Heart Rate Chart -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-slate-900 dark:text-white text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-heart-pulse text-blue-500"></i> Tren Tekanan Darah & Denyut Nadi
+                            </h3>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Grafik Sistolik/Diastolik (mmHg) dan Nadi (bpm)</p>
+                        </div>
+                        <span class="px-2 py-1 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-400 border border-blue-300 dark:border-blue-800">
+                            Vital Sign Longitudinal
+                        </span>
+                    </div>
+                    <div class="relative h-56 w-full">
+                        <canvas id="patientBPChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Structured Clinical Execution Checklist Form (Decision Support CCM) -->
+            <form id="clinical-execution-form" onsubmit="handleSaveClinicalExecution(event)" class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+                
+                <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+                    <div>
+                        <h3 class="font-black text-slate-900 dark:text-white text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-clipboard-user text-red-500"></i> Formulir Eksekusi Kunjungan Terencana Perawat
+                        </h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Panduan pemeriksaan terstruktur berbasis Clinical Practice Guidelines Kardiovaskular</p>
+                    </div>
+                    <span class="text-xs font-bold text-slate-400">Sesi: Planned Visit Execution</span>
+                </div>
+
+                <!-- Area 1: Vital Signs & Fluid Retention Evaluation -->
+                <div class="space-y-4">
+                    <h4 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl">
+                        <span class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">1</span>
+                        <span>Evaluasi Tanda Vital & Retensi Cairan (Fluid Retention)</span>
+                    </h4>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tekanan Darah Sistolik/Diastolik</label>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="input-sys" value="145" oninput="triggerCDSSAnalysis()" required class="w-1/2 p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm">
+                                <span class="text-slate-400 font-bold">/</span>
+                                <input type="number" id="input-dia" value="92" oninput="triggerCDSSAnalysis()" required class="w-1/2 p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Denyut Nadi (bpm)</label>
+                            <input type="number" id="input-hr" value="88" oninput="triggerCDSSAnalysis()" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Berat Badan Hari Ini (kg)</label>
+                            <input type="number" step="0.1" id="input-weight-exec" value="68.5" oninput="triggerCDSSAnalysis()" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm text-red-600 dark:text-red-400">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Derajat Edema Ekstremitas</label>
+                            <select id="input-edema" onchange="triggerCDSSAnalysis()" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm">
+                                <option value="0">Tidak Ada Edema</option>
+                                <option value="1">Derajat +1 (Ringan / Bekas Kaus Kaki)</option>
+                                <option value="2" selected>Derajat +2 (Sedang / Tungkai Bawah)</option>
+                                <option value="3">Derajat +3 (Berat / Anasarka)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- CDSS Warning Output Box 1 -->
+                    <div id="cdss-alert-box-1" class="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200 text-xs space-y-1">
+                        <div class="font-extrabold flex items-center gap-2 text-amber-800 dark:text-amber-300">
+                            <i class="fa-solid fa-triangle-exclamation text-base"></i> Recommendations CDSS (Clinical Decision Support System):
+                        </div>
+                        <p id="cdss-text-1">Terdapat indikasi retensi cairan sedang (Kenaikan BB +2.5 kg dalam 2 hari & Edema +2). Pertimbangkan konsultasi Dokter Spesialis Jantung untuk penyesuaian dosis diuretik (e.g. Furosemide).</p>
+                    </div>
+                </div>
+
+                <!-- Area 2: Medication Adherence Review -->
+                <div class="space-y-4">
+                    <h4 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl">
+                        <span class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">2</span>
+                        <span>Review Kepatuhan Obat (Medication Adherence)</span>
+                    </h4>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tingkat Kepatuhan Minum Obat (30 Hari)</label>
+                            <select id="input-adherence" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm">
+                                <option value="HIGH">Baik (&gt;90% Dosis Terkonsumsi)</option>
+                                <option value="MEDIUM" selected>Sedang (70% - 90% Dosis)</option>
+                                <option value="LOW">Buruk (&lt;70% Dosis Terkonsumsi)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Kendala Utama Pasien</label>
+                            <input type="text" id="input-adherence-barrier" value="Lupa minum obat sore & sering kencing di malam hari saat minum diuretik malam" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs">
+                        </div>
+                    </div>
+
+                    <!-- CDSS Warning Output Box 2 -->
+                    <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-300 dark:border-blue-800 text-blue-950 dark:text-blue-200 text-xs space-y-1">
+                        <div class="font-bold flex items-center gap-1 text-blue-800 dark:text-blue-300">
+                            <i class="fa-solid fa-pills"></i> Saran Intervensi Keperawatan CCM:
+                        </div>
+                        <p>Berikan <em>pill box organizer</em> mingguan dan ubah jadwal minum obat diuretik ke pagi hari untuk mencegah nokturia/gangguan tidur malam.</p>
+                    </div>
+                </div>
+
+                <!-- Area 3: Self-Management Action Plan (SMS) -->
+                <div class="space-y-4">
+                    <h4 class="font-extrabold text-slate-900 dark:text-slate-100 text-sm flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-2.5 rounded-xl">
+                        <span class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-xs">3</span>
+                        <span>Self-Management Action Plan & Edukasi Pasien</span>
+                    </h4>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Batas Garam/Natrium</label>
+                            <input type="text" id="input-salt-target" value="Garam < 1 sendok teh / hari (< 2000mg)" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Target Batas Cairan Harian</label>
+                            <input type="text" id="input-fluid-target" value="Maksimal 1.500 ml / 24 jam" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Tingkat Pemahaman Edukasi</label>
+                            <select id="input-understanding" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-bold text-sm">
+                                <option value="GOOD">Paham & Mampu Mengulangi</option>
+                                <option value="RE-EDUCATE" selected>Perlu Edukasi Ulang Pendamping</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Next Planned Visit Decision Section (Algorithmic Interval) -->
+                <div class="p-5 rounded-2xl bg-gradient-to-r from-slate-900 to-red-950 text-white space-y-3">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <h4 class="font-extrabold text-sm uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-red-500"></i> Penetapan Next Planned Visit Date
+                        </h4>
+                        <span id="next-visit-algo-recommendation" class="text-xs font-bold px-3 py-1 rounded-full bg-red-600 text-white">
+                            Rekomendasi CCM: Kontrol 1 Minggu (Risiko Kuning/Merah)
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Tanggal Kunjungan Terencana Berikutnya</label>
+                            <input type="date" id="input-next-visit-date" value="2026-10-07" required class="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-300 mb-1">Modu Kunjungan Berikutnya</label>
+                            <select id="input-next-visit-mode" class="w-full p-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold text-sm">
+                                <option value="TATAP_MUKA">Tatap Muka (Klinik Jantung)</option>
+                                <option value="TELEHEALTH">Tele-Konsultasi (Telehealth)</option>
+                                <option value="HOME_VISIT">Kunjungan Rumah (Home Visit)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="switchTab('dashboard')" class="px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-100 dark:hover:bg-slate-800">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-6 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs sm:text-sm shadow-lg flex items-center gap-2">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Simpan & Kunci Assesmen Kunjungan</span>
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- ========================================================================= -->
+        <!-- TAB 4: INDIKATOR EVALUASI DAN KEBERHASILAN KRITERIA (KPI DASHBOARD)       -->
+        <!-- ========================================================================= -->
+        <section id="view-kpi" class="tab-content hidden space-y-6">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">Indikator Evaluasi & Keberhasilan CCM (KPI)</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">Pengukuran keberhasilan operasional program Kunjungan Terencana (Bab 4 Rancangan CIS)</p>
+                </div>
+                <button onclick="exportKPIManagementReport()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-2 shadow">
+                    <i class="fa-solid fa-file-export"></i> Export Laporan Kinerja Faskes
+                </button>
+            </div>
+
+            <!-- 4 Core KPI Cards Table (Page 10 Reference) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- KPI 1: Planned Visit Adherence Rate -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Adherence Rate Kunjungan</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Target &gt; 85%</span>
+                    </div>
+                    <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400">88.5%</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        885 dari 1,000 jadwal Kunjungan Terencana berhasil dieksekusi tepat waktu.
+                    </p>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2">
+                        <div class="bg-emerald-500 h-2 rounded-full" style="width: 88.5%"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 2: Overdue / Loss to Follow-Up Rate -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Tingkat Mangkir (Overdue)</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Target &lt; 10%</span>
+                    </div>
+                    <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400">6.2%</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Penurunan signifikan setelah pemberlakuan pengingat otomatis WhatsApp & Outreach.
+                    </p>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2">
+                        <div class="bg-emerald-500 h-2 rounded-full" style="width: 93.8%"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 3: Proactive Response Time -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Waktu Respon Proaktif</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Target &lt; 24 Jam</span>
+                    </div>
+                    <div class="text-3xl font-black text-emerald-600 dark:text-emerald-400">4.2 Jam</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Rata-rata kecepatan perawat merespon alert risiko Merah/Kuning pasien.
+                    </p>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2">
+                        <div class="bg-emerald-500 h-2 rounded-full" style="width: 82%"></div>
+                    </div>
+                </div>
+
+                <!-- KPI 4: 30-Day Readmission Rate Reduction -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
+                    <div class="flex justify-between items-start">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Penurunan Rawat Inap Ulang</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">Target -20-30%</span>
+                    </div>
+                    <div class="text-3xl font-black text-red-600 dark:text-red-500">-24.8%</div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">
+                        Penurunan angka readmission 30-hari pasien gagal jantung pasca-rawat inap.
+                    </p>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 mt-2">
+                        <div class="bg-red-500 h-2 rounded-full" style="width: 78%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Visual Graphs -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Adherence Trend 6 Months -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <h3 class="font-bold text-slate-900 dark:text-white text-sm">
+                        <i class="fa-solid fa-chart-area text-emerald-500"></i> Tren Kepatuhan Planned Visits (6 Bulan Terakhir)
+                    </h3>
+                    <div class="relative h-60 w-full">
+                        <canvas id="kpiAdherenceChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Readmission Reduction Curve -->
+                <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <h3 class="font-bold text-slate-900 dark:text-white text-sm">
+                        <i class="fa-solid fa-bed-pulse text-red-500"></i> Angka Readmission 30-Hari Pasien Kardiovaskular Kronis
+                    </h3>
+                    <div class="relative h-60 w-full">
+                        <canvas id="kpiReadmissionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- MODAL 1: PROACTIVE SCHEDULER MODAL (Bab 3.2 Reference) -->
+    <div id="modal-scheduler" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 max-w-xl w-full rounded-2xl p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-extrabold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-plus text-red-500"></i> Penjadwalan Kunjungan Terencana Proaktif
+                </h3>
+                <button onclick="closeProactiveScheduleModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form onsubmit="handleProactiveScheduleSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Cari / Pilih Pasien Terdaftar</label>
+                    <select id="modal-sched-patient" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold">
+                        <option value="88210">Bpk. Budi Santoso (RM-88210)</option>
+                        <option value="99482">Ibu Siti (RM-99482)</option>
+                        <option value="77312">Ibu Ahmad (RM-77312)</option>
+                        <option value="66129">Bpk. Hendra Wijaya (RM-66129)</option>
+                        <option value="55201">Ibu Maria Z. (RM-55201)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Alasan Kunjungan (Visit Reason)</label>
+                    <select id="modal-sched-reason" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold">
+                        <option value="Kontrol Rutin CCM">Kontrol Rutin CCM (Bulan)</option>
+                        <option value="Evaluasi Dosis Diuretik & Kepatuhan Diet">Evaluasi Dosis Diuretik & Kepatuhan Diet</option>
+                        <option value="Evaluasi Pasca-Rawat Inap (30-Day Follow-Up)">Evaluasi Pasca-Rawat Inap (30-Day Follow-Up)</option>
+                        <option value="Tindak Lanjut Perburukan Gejala (Alert Response)">Tindak Lanjut Perburukan Gejala (Alert Response)</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Tanggal Kunjungan</label>
+                        <input type="date" id="modal-sched-date" required class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold">
+                    </div>
+                    <div>
+                        <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Jam Slot</label>
+                        <select id="modal-sched-time" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold">
+                            <option value="08:30 WIB">08:30 WIB</option>
+                            <option value="09:15 WIB">09:15 WIB</option>
+                            <option value="10:00 WIB">10:00 WIB</option>
+                            <option value="11:00 WIB">11:00 WIB</option>
+                            <option value="13:30 WIB">13:30 WIB</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Mode Intervensi</label>
+                    <div class="flex items-center gap-4 pt-1">
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="modal-mode" value="Tatap Muka (Klinik)" checked class="text-red-600">
+                            <span>Tatap Muka Klinik</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="modal-mode" value="Telehealth" class="text-red-600">
+                            <span>Telehealth</span>
+                        </label>
+                        <label class="flex items-center gap-1.5 cursor-pointer">
+                            <input type="radio" name="modal-mode" value="Home Visit" class="text-red-600">
+                            <span>Home Visit</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 space-y-2">
+                    <span class="font-bold text-slate-700 dark:text-slate-300 block">Channel Notification Alert:</span>
+                    <div class="flex items-center gap-4">
+                        <label class="flex items-center gap-1.5">
+                            <input type="checkbox" checked class="rounded text-red-600">
+                            <span>WhatsApp Pengingat (H-3, H-1, Hari-H)</span>
+                        </label>
+                        <label class="flex items-center gap-1.5">
+                            <input type="checkbox" checked class="rounded text-red-600">
+                            <span>SMS Service</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Catatan Pra-Kunjungan (Pre-Visit Note)</label>
+                    <textarea id="modal-sched-notes" rows="2" placeholder="Pasien membutuhkan re-edukasi pembatasan cairan harian..." class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeProactiveScheduleModal()" class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 font-bold">Batal</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold shadow">Simpan & Jadwalkan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: TRIGGER OUTREACH MODAL FOR OVERDUE PATIENTS -->
+    <div id="modal-outreach" class="fixed inset-0 bg-slate-950/70 z-50 flex items-center justify-center p-4 hidden backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 max-w-md w-full rounded-2xl p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-bullhorn text-red-500"></i> Trigger Outreach Pasien Mangkir
+                </h3>
+                <button onclick="closeOutreachModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="space-y-3 text-xs" id="outreach-modal-body">
+                <!-- Dynamically populated -->
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeOutreachModal()" class="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-300 font-bold text-xs">Tutup</button>
+                <button onclick="executeOutreachAction()" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow flex items-center gap-1.5">
+                    <i class="fa-brands fa-whatsapp text-sm"></i> Kirim Pesan Pengingat Proaktif
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-5 py-3 rounded-xl text-xs font-bold shadow-2xl transition duration-300 opacity-0 pointer-events-none flex items-center gap-2.5 border border-slate-700">
+        <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+        <span id="toast-message">Notifikasi sistem</span>
+    </div>
+
+    <!-- APPLICATION LOGIC & JAVASCRIPT ENGINE -->
+    <script>
+        // Data Store: Planned Visits & Patients (Based on CIS PDF Page 6 Table & Requirements)
+        let plannedVisits = [
+            {
+                id: 88210,
+                time: "09:15 WIB",
+                name: "Bpk. Budi Santoso",
+                rm: "RM-88210",
+                age: 58,
+                gender: "Laki-laki",
+                emergencyContact: "0812-9988-7766 (Istri)",
+                diagnoses: ["Gagal Jantung Kronis (NYHA III)", "Hipertensi Stage II"],
+                risk: "RED",
+                riskLabel: "Critical Alert",
+                riskReason: "BB +2.5kg / 2 hari & Sesak Istirahat",
+                method: "Telehealth / Call",
+                status: "Ongoing",
+                weightHistory: [66.0, 66.1, 66.0, 68.5],
+                bpSystolicHistory: [130, 132, 135, 145],
+                bpDiastolicHistory: [82, 84, 85, 92],
+                hrHistory: [76, 78, 80, 88],
+                lastWeight: 68.5,
+                lastBP: "145/92",
+                lastHR: 88,
+                edemaGrade: 2,
+                adherence: "MEDIUM"
+            },
+            {
+                id: 99482,
+                time: "08:30 WIB",
+                name: "Ibu Siti",
+                rm: "RM-99482",
+                age: 62,
+                gender: "Perempuan",
+                emergencyContact: "0811-2233-4455 (Anak)",
+                diagnoses: ["Gagal Jantung Kronis (NYHA II)", "Hipertensi"],
+                risk: "GREEN",
+                riskLabel: "Stable",
+                riskReason: "Tidak ada tanda perburukan",
+                method: "Tatap Muka (Klinik)",
+                status: "Selesai",
+                weightHistory: [61.0, 61.2, 61.1, 61.3],
+                bpSystolicHistory: [120, 122, 118, 120],
+                bpDiastolicHistory: [80, 80, 78, 80],
+                hrHistory: [72, 70, 74, 72],
+                lastWeight: 61.3,
+                lastBP: "120/80",
+                lastHR: 72,
+                edemaGrade: 0,
+                adherence: "HIGH"
+            },
+            {
+                id: 77312,
+                time: "10:00 WIB",
+                name: "Ibu Ahmad",
+                rm: "RM-77312",
+                age: 65,
+                gender: "Perempuan",
+                emergencyContact: "0813-4455-6677 (Suami)",
+                diagnoses: ["Penyakit Jantung Koroner (PJK)", "Hipertensi Grade I"],
+                risk: "YELLOW",
+                riskLabel: "Warning",
+                riskReason: "Gejala Sesak Aktivitas Ringan Meningkat",
+                method: "Tatap Muka (Klinik)",
+                status: "Waiting",
+                weightHistory: [58.0, 58.2, 58.8, 59.3],
+                bpSystolicHistory: [130, 135, 138, 140],
+                bpDiastolicHistory: [85, 86, 88, 88],
+                hrHistory: [78, 80, 82, 84],
+                lastWeight: 59.3,
+                lastBP: "140/88",
+                lastHR: 84,
+                edemaGrade: 1,
+                adherence: "MEDIUM"
+            },
+            {
+                id: 66129,
+                time: "11:30 WIB",
+                name: "Bpk. Hendra Wijaya",
+                rm: "RM-66129",
+                age: 54,
+                gender: "Laki-laki",
+                emergencyContact: "0815-6677-8899 (Adak)",
+                diagnoses: ["Gagal Jantung Kronis (NYHA II)", "Krisokardiovaskular"],
+                risk: "RED",
+                riskLabel: "Critical Alert",
+                riskReason: "TD 185/110 mmHg & Nyeri Dada Ringan",
+                method: "Telehealth / Call",
+                status: "Waiting",
+                weightHistory: [72.0, 72.1, 72.5, 73.0],
+                bpSystolicHistory: [150, 160, 170, 185],
+                bpDiastolicHistory: [95, 100, 105, 110],
+                hrHistory: [80, 85, 90, 95],
+                lastWeight: 73.0,
+                lastBP: "185/110",
+                lastHR: 95,
+                edemaGrade: 1,
+                adherence: "LOW"
+            }
+        ];
+
+        let overduePatients = [
+            {
+                id: 55201,
+                name: "Ibu Maria Z.",
+                rm: "RM-55201",
+                scheduledDate: "27 September 2026",
+                daysOverdue: 3,
+                phone: "0812-3322-1100",
+                reason: "Terlewat Kontrol Rutin Dosis Diuretik Bulan"
+            },
+            {
+                id: 44119,
+                name: "Bpk. Bambang S.",
+                rm: "RM-44119",
+                scheduledDate: "28 September 2026",
+                daysOverdue: 2,
+                phone: "0813-9911-2233",
+                reason: "Terlewat Sesi Evaluasi Pasca Rawat Inap"
+            }
+        ];
+
+        // Active State
+        let selectedPatientId = 88210;
+        let fontScaleIndex = 0;
+        let weightChartInstance = null;
+        let bpChartInstance = null;
+        let kpiAdherenceChartInstance = null;
+        let kpiReadmissionChartInstance = null;
+        let selectedOutreachPatient = null;
+
+        // On Window Load Initialization
+        window.onload = function() {
+            renderPlannedVisitsTable('ALL');
+            renderSchedulerSlotGrid();
+            renderOverdueList();
+            initLongitudinalCharts();
+            initKPICharts();
+            loadSelectedPatientData(88210);
+        };
+
+        // Theme Switcher
+        function toggleTheme() {
+            const html = document.documentElement;
+            const icon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                html.classList.add('dark');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+
+        // Font Scaling Accessibility
+        function changeFontScale(delta) {
+            const container = document.getElementById('app-main-container');
+            const classes = ['text-scale-sm', 'text-scale-md', 'text-scale-lg'];
+            container.classList.remove(classes[fontScaleIndex + 1] || 'text-scale-md');
+            fontScaleIndex = Math.max(-1, Math.min(1, fontScaleIndex + delta));
+            if (fontScaleIndex === 1) container.classList.add('text-scale-lg');
+            else if (fontScaleIndex === -1) container.classList.add('text-scale-sm');
+            showToast("Ukuran tampilan teks disesuaikan");
+        }
+
+        // Tab Navigation
+        function switchTab(tabKey) {
+            const tabs = ['dashboard', 'scheduler', 'execution', 'kpi'];
+            tabs.forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                const navBtn = document.getElementById('tab-nav-' + t);
+                if (navBtn) {
+                    navBtn.className = "tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+                }
+            });
+
+            document.getElementById('view-' + tabKey).classList.remove('hidden');
+            const activeNav = document.getElementById('tab-nav-' + tabKey);
+            if (activeNav) {
+                activeNav.className = "tab-btn flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition whitespace-nowrap bg-red-600 text-white";
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (tabKey === 'execution') {
+                setTimeout(() => {
+                    if (weightChartInstance) weightChartInstance.resize();
+                    if (bpChartInstance) bpChartInstance.resize();
+                }, 100);
+            } else if (tabKey === 'kpi') {
+                setTimeout(() => {
+                    if (kpiAdherenceChartInstance) kpiAdherenceChartInstance.resize();
+                    if (kpiReadmissionChartInstance) kpiReadmissionChartInstance.resize();
+                }, 100);
+            }
+        }
+
+        // Render Planned Visits Table
+        function renderPlannedVisitsTable(filter) {
+            const tbody = document.getElementById('planned-visits-tbody');
+            tbody.innerHTML = '';
+
+            let items = plannedVisits;
+            if (filter !== 'ALL') {
+                items = plannedVisits.filter(p => p.risk === filter);
+            }
+
+            items.forEach(p => {
+                let badgeClass = "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800";
+                if (p.risk === 'YELLOW') badgeClass = "bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-200 border-amber-300 dark:border-amber-800";
+                if (p.risk === 'RED') badgeClass = "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-200 border-red-300 dark:border-red-800 animate-pulse";
+
+                let statusBadge = "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+                if (p.status === 'Selesai') statusBadge = "bg-emerald-500 text-white font-bold";
+                if (p.status === 'Ongoing') statusBadge = "bg-blue-600 text-white font-bold";
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                        <td class="py-3 pl-2 font-black text-slate-900 dark:text-slate-100">${p.time}</td>
+                        <td class="py-3">
+                            <div class="font-bold text-slate-900 dark:text-white">${p.name}</div>
+                            <div class="text-[11px] text-slate-400 font-mono">${p.rm}</div>
+                        </td>
+                        <td class="py-3">
+                            <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">${p.diagnoses[0]}</div>
+                        </td>
+                        <td class="py-3">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-extrabold border ${badgeClass}">
+                                [${p.risk}] ${p.riskLabel}
+                            </span>
+                            <div class="text-[10px] text-slate-400 mt-0.5 max-w-[140px] truncate" title="${p.riskReason}">${p.riskReason}</div>
+                        </td>
+                        <td class="py-3 text-xs font-medium text-slate-600 dark:text-slate-300">${p.method}</td>
+                        <td class="py-3">
+                            <span class="px-2 py-0.5 rounded text-[10px] ${statusBadge}">${p.status}</span>
+                        </td>
+                        <td class="py-3 text-right pr-2">
+                            <button onclick="selectPatientForExecution(${p.id})" class="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow transition">
+                                ${p.status === 'Selesai' ? 'Lihat Detail' : 'Mulai Eksekusi'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function filterTable(type) {
+            renderPlannedVisitsTable(type);
+        }
+
+        // Render Scheduler Slot Capacity Grid
+        function renderSchedulerSlotGrid() {
+            const grid = document.getElementById('calendar-slots-grid');
+            grid.innerHTML = plannedVisits.map(p => `
+                <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <div>
+                        <span class="text-xs font-black text-red-600 dark:text-red-400 block">${p.time}</span>
+                        <h5 class="font-bold text-slate-900 dark:text-white text-xs">${p.name} (${p.rm})</h5>
+                        <p class="text-[10px] text-slate-400">${p.method}</p>
+                    </div>
+                    <button onclick="selectPatientForExecution(${p.id})" class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline">
+                        Kelola →
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Render Overdue Patient List
+        function renderOverdueList() {
+            const container = document.getElementById('overdue-list-container');
+            container.innerHTML = overduePatients.map(op => `
+                <div class="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 space-y-2">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h5 class="font-bold text-red-950 dark:text-red-200 text-xs">${op.name} (${op.rm})</h5>
+                            <span class="text-[10px] text-red-700 dark:text-red-300 font-semibold block">Terlewat ${op.daysOverdue} hari (${op.scheduledDate})</span>
+                        </div>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-black bg-red-600 text-white">OVERDUE</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 dark:text-slate-300">${op.reason}</p>
+                    <button onclick="openOutreachModal(${op.id})" class="w-full py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>Trigger Outreach (WA / Phone)</span>
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // Load Selected Patient into Execution Tab
+        function selectPatientForExecution(patientId) {
+            selectedPatientId = patientId;
+            document.getElementById('execution-patient-select').value = patientId;
+            loadSelectedPatientData(patientId);
+            switchTab('execution');
+        }
+
+        function loadSelectedPatientData(id) {
+            id = parseInt(id);
+            const p = plannedVisits.find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('patient-name').innerText = p.name;
+            document.getElementById('patient-rm').innerText = p.rm;
+            document.getElementById('patient-avatar').innerText = p.name.split(' ').map(n=>n[0]).join('').substr(0,2);
+            document.getElementById('patient-bio').innerText = `Usia: ${p.age} Tahun | ${p.gender} | Kontak Darurat: ${p.emergencyContact}`;
+
+            // Diagnoses badges
+            const diagContainer = document.getElementById('patient-diagnoses');
+            diagContainer.innerHTML = p.diagnoses.map(d => `<span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950 text-red-300 border border-red-800">${d}</span>`).join('');
+
+            // Risk badge
+            const riskBadge = document.getElementById('patient-risk-badge');
+            riskBadge.innerText = `[${p.risk}] ${p.riskLabel}`;
+            if (p.risk === 'RED') riskBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-red-600 text-white animate-pulse";
+            else if (p.risk === 'YELLOW') riskBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-white";
+            else riskBadge.className = "px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-600 text-white";
+
+            // Snapshots
+            document.getElementById('snap-weight').innerText = `${p.lastWeight} kg`;
+            document.getElementById('snap-bp').innerText = p.lastBP;
+            document.getElementById('snap-hr').innerText = p.lastHR;
+
+            // Update Form Inputs
+            const [sys, dia] = p.lastBP.split('/');
+            document.getElementById('input-sys').value = sys || 120;
+            document.getElementById('input-dia').value = dia || 80;
+            document.getElementById('input-hr').value = p.lastHR || 75;
+            document.getElementById('input-weight-exec').value = p.lastWeight || 60;
+            document.getElementById('input-edema').value = p.edemaGrade || 0;
+            document.getElementById('input-adherence').value = p.adherence || "HIGH";
+
+            triggerCDSSAnalysis();
+            updateLongitudinalCharts(p);
+        }
+
+        // CDSS (Clinical Decision Support System) Algorithmic Logic
+        function triggerCDSSAnalysis() {
+            const sys = parseInt(document.getElementById('input-sys').value) || 120;
+            const dia = parseInt(document.getElementById('input-dia').value) || 80;
+            const weight = parseFloat(document.getElementById('input-weight-exec').value) || 60;
+            const edema = parseInt(document.getElementById('input-edema').value) || 0;
+
+            const cdssBox1 = document.getElementById('cdss-alert-box-1');
+            const cdssText1 = document.getElementById('cdss-text-1');
+            const algoRec = document.getElementById('next-visit-algo-recommendation');
+
+            if (edema >= 2 || weight > 65 || sys > 160) {
+                cdssBox1.className = "p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-300 dark:border-red-800 text-red-950 dark:text-red-200 text-xs space-y-1 animate-pulse";
+                cdssText1.innerText = `PERINGATAN KRITIS: Terdeteksi retensi cairan berat / lonjakan Tanda Vital (TD ${sys}/${dia} mmHg, Edema +${edema}). Disarankan konsultasi Dokter Spesialis Jantung SEGERA & Evaluasi Dosis Diuretik.`;
+                algoRec.innerText = "Rekomendasi CCM: Kontrol 3-7 Hari / Refer Spesialis";
+                algoRec.className = "text-xs font-bold px-3 py-1 rounded-full bg-red-600 text-white animate-pulse";
+            } else if (edema === 1 || sys > 135) {
+                cdssBox1.className = "p-4 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-950 dark:text-amber-200 text-xs space-y-1";
+                cdssText1.innerText = `PERHATIAN: Terdapat indikasi peningkatan ringan gejala retensi cairan (TD ${sys}/${dia} mmHg). Lakukan re-edukasi batasan cairan & garam harian.`;
+                algoRec.innerText = "Rekomendasi CCM: Kontrol Terencana 1-2 Minggu";
+                algoRec.className = "text-xs font-bold px-3 py-1 rounded-full bg-amber-500 text-white";
+            } else {
+                cdssBox1.className = "p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-200 text-xs space-y-1";
+                cdssText1.innerText = "STABIL: Seluruh parameter tanda vital & retensi cairan dalam batas normal. Pertahankan rencana asuhan mandiri saat ini.";
+                algoRec.innerText = "Rekomendasi CCM: Kontrol Terencana 4 Minggu (Rutin)";
+                algoRec.className = "text-xs font-bold px-3 py-1 rounded-full bg-emerald-600 text-white";
+            }
+        }
+
+        // Chart.js Graphs Initialization
+        function initLongitudinalCharts() {
+            const ctx1 = document.getElementById('patientWeightChart').getContext('2d');
+            weightChartInstance = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['4 Mgg Lalu', '3 Mgg Lalu', '2 Mgg Lalu', 'Hari Ini'],
+                    datasets: [{
+                        label: 'Berat Badan (kg)',
+                        data: [66.0, 66.1, 66.0, 68.5],
+                        borderColor: '#E53E3E',
+                        backgroundColor: 'rgba(229, 62, 62, 0.15)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 6,
+                        pointBackgroundColor: '#E53E3E'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            const ctx2 = document.getElementById('patientBPChart').getContext('2d');
+            bpChartInstance = new Chart(ctx2, {
+                type: 'line',
+                data: {
+                    labels: ['4 Mgg Lalu', '3 Mgg Lalu', '2 Mgg Lalu', 'Hari Ini'],
+                    datasets: [
+                        {
+                            label: 'Sistolik (mmHg)',
+                            data: [130, 132, 135, 145],
+                            borderColor: '#3182CE',
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            pointRadius: 5
+                        },
+                        {
+                            label: 'Diastolik (mmHg)',
+                            data: [82, 84, 85, 92],
+                            borderColor: '#805AD5',
+                            backgroundColor: 'transparent',
+                            tension: 0.3,
+                            pointRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { boxWidth: 12, font: { size: 10 } } } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        function updateLongitudinalCharts(p) {
+            if (!weightChartInstance || !bpChartInstance) return;
+
+            weightChartInstance.data.datasets[0].data = p.weightHistory;
+            weightChartInstance.update();
+
+            bpChartInstance.data.datasets[0].data = p.bpSystolicHistory;
+            bpChartInstance.data.datasets[1].data = p.bpDiastolicHistory;
+            bpChartInstance.update();
+        }
+
+        function initKPICharts() {
+            const ctx1 = document.getElementById('kpiAdherenceChart').getContext('2d');
+            kpiAdherenceChartInstance = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt'],
+                    datasets: [{
+                        label: 'Adherence Rate (%)',
+                        data: [72, 75, 80, 84, 86, 88.5],
+                        borderColor: '#38A169',
+                        backgroundColor: 'rgba(56, 161, 105, 0.15)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { min: 60, max: 100 } }
+                }
+            });
+
+            const ctx2 = document.getElementById('kpiReadmissionChart').getContext('2d');
+            kpiReadmissionChartInstance = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: ['Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt'],
+                    datasets: [{
+                        label: 'Angka Readmission (%)',
+                        data: [28, 26, 22, 19, 17, 14.2],
+                        backgroundColor: '#E53E3E',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Form Handlers
+        function handleSaveClinicalExecution(e) {
+            e.preventDefault();
+            const p = plannedVisits.find(item => item.id === selectedPatientId);
+            if (p) {
+                p.status = 'Selesai';
+                p.risk = 'GREEN';
+                p.riskLabel = 'Stable (Evaluated)';
+            }
+            renderPlannedVisitsTable('ALL');
+            showToast("Assesmen Kunjungan Terencana berhasil dikunci & disimpan ke CIS!");
+            switchTab('dashboard');
+        }
+
+        function openProactiveScheduleModal() {
+            document.getElementById('modal-sched-date').value = "2026-10-05";
+            document.getElementById('modal-scheduler').classList.remove('hidden');
+        }
+
+        function closeProactiveScheduleModal() {
+            document.getElementById('modal-scheduler').classList.add('hidden');
+        }
+
+        function handleProactiveScheduleSubmit(e) {
+            e.preventDefault();
+            closeProactiveScheduleModal();
+            showToast("Kunjungan Terencana Proaktif berhasil dijadwalkan & Pengingat WA diaktifkan!");
+        }
+
+        function openOutreachModal(id) {
+            selectedOutreachPatient = overduePatients.find(op => op.id === id);
+            if (!selectedOutreachPatient) return;
+
+            const body = document.getElementById('outreach-modal-body');
+            body.innerHTML = `
+                <div class="p-3 rounded-xl bg-slate-100 dark:bg-slate-800 space-y-1">
+                    <div class="font-bold text-slate-900 dark:text-white">${selectedOutreachPatient.name} (${selectedOutreachPatient.rm})</div>
+                    <div class="text-slate-500">No. HP Pasien: ${selectedOutreachPatient.phone}</div>
+                    <div class="text-red-600 font-semibold">Terlewat: ${selectedOutreachPatient.daysOverdue} Hari (${selectedOutreachPatient.scheduledDate})</div>
+                </div>
+
+                <div>
+                    <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Draf Pesan Pengingat WhatsApp / SMS:</label>
+                    <textarea rows="4" class="w-full p-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white font-medium">Halo Yth. ${selectedOutreachPatient.name}, kami dari Tim Perawat Poli Jantung HEART-CHECK mengingatkan jadwal Kunjungan Terencana Anda yang terlewat pada ${selectedOutreachPatient.scheduledDate}. Mohon konfirmasi jadwal ulang untuk evaluasi kesehatan jantung Anda. Terima kasih.</textarea>
+                </div>
+            `;
+            document.getElementById('modal-outreach').classList.remove('hidden');
+        }
+
+        function closeOutreachModal() {
+            document.getElementById('modal-outreach').classList.add('hidden');
+        }
+
+        function executeOutreachAction() {
+            closeOutreachModal();
+            showToast(`Pesan outreach otomatis telah dikirim via WhatsApp ke ${selectedOutreachPatient?.phone}!`);
+        }
+
+        function handleGlobalSearch(e) {
+            if (e.key === 'Enter') {
+                const query = e.target.value.toLowerCase().trim();
+                const found = plannedVisits.find(p => p.name.toLowerCase().includes(query) || p.rm.toLowerCase().includes(query));
+                if (found) {
+                    selectPatientForExecution(found.id);
+                    showToast(`Pasien ${found.name} ditemukan`);
+                } else {
+                    showToast("Pasien tidak ditemukan dalam daftar Kunjungan Terencana Hari Ini");
+                }
+            }
+        }
+
+        function toggleAlertDrawer() {
+            showToast("2 Alert Perburukan Kritis membutuhkan tindakan langsung perawat!");
+            switchTab('dashboard');
+        }
+
+        function printClinicalSummary() {
+            window.print();
+        }
+
+        function referToSpecialistModal() {
+            showToast("Formulir Rujukan Internal Dokter Spesialis Jantung telah dibuat.");
+        }
+
+        function exportKPIManagementReport() {
+            showToast("Mengunduh Laporan Kinerja CIS Faskes (PDF/Excel)...");
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
